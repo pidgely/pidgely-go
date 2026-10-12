@@ -1,0 +1,3681 @@
+openapi: 3.1.0
+info:
+  title: Pidgely API (public subset)
+  version: 1.0.0
+  summary: Resend-compatible email API.
+  description: 'Public, Resend-compatible subset of the Pidgely API used to generate the types of the `pidgely` SDK. Errors
+    have the shape `{"statusCode","name","message"}`. List endpoints use cursor pagination: `limit` (1-100), `after` and `before`
+    take item ids and the response is `{"object":"list","has_more","data"}`.'
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+- url: https://api.pidgely.com
+tags:
+- name: API keys
+- name: Audiences (legacy)
+- name: Broadcasts
+- name: Contacts
+- name: Domains
+- name: Emails
+- name: Segments
+- name: Suppressions
+- name: Templates
+- name: Webhooks
+paths:
+  /api-keys:
+    post:
+      tags:
+      - API keys
+      summary: Create an API key
+      operationId: post_api_keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                permission:
+                  type: string
+                  enum:
+                  - full_access
+                  - sending_access
+                domain_id:
+                  type: string
+                  format: uuid
+              required:
+              - name
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - API keys
+      summary: List API keys
+      operationId: get_api_keys
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiKey'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /api-keys/{id}:
+    patch:
+      tags:
+      - API keys
+      summary: Rename an API key
+      operationId: patch_api_keys_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+              - name
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - API keys
+      summary: Revoke an API key
+      operationId: delete_api_keys_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /audiences:
+    post:
+      tags:
+      - Audiences (legacy)
+      summary: Create a audience
+      operationId: post_audiences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+              - name
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Audiences (legacy)
+      summary: List audiences
+      operationId: get_audiences
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Segment'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /audiences/{id}:
+    get:
+      tags:
+      - Audiences (legacy)
+      summary: Retrieve a audience
+      operationId: get_audiences_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Segment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Audiences (legacy)
+      summary: Delete a audience
+      operationId: delete_audiences_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /audiences/{id}/contacts:
+    get:
+      tags:
+      - Audiences (legacy)
+      summary: List a audience's contacts
+      operationId: get_audiences_id_contacts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contact'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    post:
+      tags:
+      - Audiences (legacy)
+      summary: Create a contact in an audience
+      operationId: post_audiences_id_contacts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /audiences/{id}/contacts/{key}:
+    get:
+      tags:
+      - Audiences (legacy)
+      summary: Retrieve a contact
+      operationId: get_audiences_id_contacts_key
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Audiences (legacy)
+      summary: Update a contact
+      operationId: patch_audiences_id_contacts_key
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Audiences (legacy)
+      summary: Delete a contact
+      operationId: delete_audiences_id_contacts_key
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  contact:
+                    type: string
+                    format: uuid
+                  deleted:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /broadcasts:
+    post:
+      tags:
+      - Broadcasts
+      summary: Create a broadcast (optionally send)
+      operationId: post_broadcasts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Broadcasts
+      summary: List broadcasts
+      operationId: get_broadcasts
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Broadcast'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /broadcasts/{id}:
+    get:
+      tags:
+      - Broadcasts
+      summary: Retrieve a broadcast
+      operationId: get_broadcasts_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Broadcasts
+      summary: Update a draft broadcast
+      operationId: patch_broadcasts_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Broadcasts
+      summary: Delete a broadcast
+      operationId: delete_broadcasts_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /broadcasts/{id}/cancel:
+    post:
+      tags:
+      - Broadcasts
+      summary: Cancel a scheduled or queued broadcast
+      operationId: post_broadcasts_id_cancel
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /broadcasts/{id}/duplicate:
+    post:
+      tags:
+      - Broadcasts
+      summary: Duplicate a broadcast as a draft
+      operationId: post_broadcasts_id_duplicate
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /broadcasts/{id}/send:
+    post:
+      tags:
+      - Broadcasts
+      summary: Send a broadcast now or at scheduled_at
+      operationId: post_broadcasts_id_send
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scheduled_at:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Id'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /contacts:
+    post:
+      tags:
+      - Contacts
+      summary: Create (or update) a contact
+      operationId: post_contacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Contacts
+      summary: List contacts
+      operationId: get_contacts
+      parameters:
+      - name: segment_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: audience_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Legacy alias of segment_id.
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contact'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /contacts/{key}:
+    get:
+      tags:
+      - Contacts
+      summary: Retrieve a contact
+      operationId: get_contacts_key
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Contacts
+      summary: Update a contact (unsubscribed syncs the suppression list)
+      operationId: patch_contacts_key
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Contacts
+      summary: Delete a contact
+      operationId: delete_contacts_key
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  contact:
+                    type: string
+                    format: uuid
+                  id:
+                    type: string
+                    format: uuid
+                  deleted:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /contacts/{key}/segments:
+    get:
+      tags:
+      - Contacts
+      summary: List a contact's segments
+      operationId: get_contacts_key_segments
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Segment'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /contacts/{key}/segments/{segment_id}:
+    post:
+      tags:
+      - Contacts
+      summary: Add a contact to a segment
+      operationId: post_contacts_key_segments_segment_id
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      - name: segment_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Segment id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Id'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Contacts
+      summary: Remove a contact from a segment
+      operationId: delete_contacts_key_segments_segment_id
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Contact id or e-mail address
+      - name: segment_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Segment id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  id:
+                    type: string
+                    format: uuid
+                  segment_id:
+                    type: string
+                    format: uuid
+                  audienceId:
+                    type: string
+                    format: uuid
+                  deleted:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /domains:
+    post:
+      tags:
+      - Domains
+      summary: Create a domain
+      operationId: post_domains
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDomain'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Domains
+      summary: List domains
+      operationId: get_domains
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Domain'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /domains/{id}:
+    get:
+      tags:
+      - Domains
+      summary: Retrieve a domain
+      operationId: get_domains_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Domains
+      summary: Update a domain
+      operationId: patch_domains_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tls:
+                  type: string
+                  enum:
+                  - opportunistic
+                  - enforced
+                open_tracking:
+                  type: boolean
+                click_tracking:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Domains
+      summary: Delete a domain
+      operationId: delete_domains_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /domains/{id}/verify:
+    post:
+      tags:
+      - Domains
+      summary: Verify a domain's DNS records
+      operationId: post_domains_id_verify
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /emails:
+    post:
+      tags:
+      - Emails
+      summary: Send an email
+      operationId: post_emails
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        schema:
+          type: string
+          maxLength: 256
+        description: Replays the stored response for 24 hours; a different body gets 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmail'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Id'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Emails
+      summary: List sent emails
+      operationId: get_emails
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Email'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /emails/batch:
+    post:
+      tags:
+      - Emails
+      summary: Send up to 100 emails
+      operationId: post_emails_batch
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        schema:
+          type: string
+          maxLength: 256
+        description: Replays the stored response for 24 hours; a different body gets 409.
+      - name: x-batch-validation
+        in: header
+        schema:
+          type: string
+          enum:
+          - strict
+          - permissive
+        description: 'strict (default): all or nothing; permissive: valid items are sent, invalid ones reported in errors.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/SendEmail'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /emails/{email_id}/attachments:
+    get:
+      tags:
+      - Emails
+      summary: List an email's attachments
+      operationId: get_emails_email_id_attachments
+      parameters:
+      - name: email_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Email id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EmailAttachment'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /emails/{email_id}/attachments/{id}:
+    get:
+      tags:
+      - Emails
+      summary: Retrieve an attachment
+      operationId: get_emails_email_id_attachments_id
+      parameters:
+      - name: email_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Email id
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Attachment id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailAttachment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /emails/{id}:
+    get:
+      tags:
+      - Emails
+      summary: Retrieve an email
+      operationId: get_emails_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Email'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Emails
+      summary: Reschedule a scheduled email
+      operationId: patch_emails_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scheduled_at:
+                  type: string
+              required:
+              - scheduled_at
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /emails/{id}/cancel:
+    post:
+      tags:
+      - Emails
+      summary: Cancel a scheduled email
+      operationId: post_emails_id_cancel
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /segments:
+    post:
+      tags:
+      - Segments
+      summary: Create a segment
+      operationId: post_segments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+              - name
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Segments
+      summary: List segments
+      operationId: get_segments
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Segment'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /segments/{id}:
+    get:
+      tags:
+      - Segments
+      summary: Retrieve a segment
+      operationId: get_segments_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Segment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Segments
+      summary: Delete a segment
+      operationId: delete_segments_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Segments
+      summary: Rename a segment
+      operationId: patch_segments_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+              - name
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /segments/{id}/contacts:
+    get:
+      tags:
+      - Segments
+      summary: List a segment's contacts
+      operationId: get_segments_id_contacts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contact'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /suppressions:
+    post:
+      tags:
+      - Suppressions
+      summary: Suppress an address
+      operationId: post_suppressions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+              - email
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Suppressions
+      summary: List suppressions
+      operationId: get_suppressions
+      parameters:
+      - name: origin
+        in: query
+        schema:
+          type: string
+          enum:
+          - bounce
+          - complaint
+          - manual
+          - unsubscribe
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Suppression'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /suppressions/batch/add:
+    post:
+      tags:
+      - Suppressions
+      summary: Suppress up to 100 addresses
+      operationId: post_suppressions_batch_add
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emails:
+                  type: array
+                  items:
+                    type: string
+              required:
+              - emails
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /suppressions/batch/remove:
+    post:
+      tags:
+      - Suppressions
+      summary: Remove up to 100 suppressions
+      operationId: post_suppressions_batch_remove
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emails:
+                  type: array
+                  items:
+                    type: string
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /suppressions/{id}:
+    get:
+      tags:
+      - Suppressions
+      summary: Retrieve a suppression by id or email
+      operationId: get_suppressions_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Suppression id or e-mail address
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suppression'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Suppressions
+      summary: Remove a suppression by id or email
+      operationId: delete_suppressions_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Suppression id or e-mail address
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /templates:
+    post:
+      tags:
+      - Templates
+      summary: Create a template
+      operationId: post_templates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Templates
+      summary: List templates
+      operationId: get_templates
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /templates/{key}:
+    get:
+      tags:
+      - Templates
+      summary: Retrieve a template (draft)
+      operationId: get_templates_key
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Template id or alias
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Templates
+      summary: Update a template draft
+      operationId: patch_templates_key
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Template id or alias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Templates
+      summary: Delete a template
+      operationId: delete_templates_key
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Template id or alias
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /templates/{key}/duplicate:
+    post:
+      tags:
+      - Templates
+      summary: Duplicate a template
+      operationId: post_templates_key_duplicate
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Template id or alias
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /templates/{key}/publish:
+    post:
+      tags:
+      - Templates
+      summary: Publish the draft
+      operationId: post_templates_key_publish
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Template id or alias
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /webhooks:
+    post:
+      tags:
+      - Webhooks
+      summary: Create a webhook (Resend event names, svix-* signatures)
+      operationId: post_webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                events:
+                  type: array
+                  items:
+                    type: string
+              required:
+              - endpoint
+              - events
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  id:
+                    type: string
+                    format: uuid
+                  signing_secret:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    get:
+      tags:
+      - Webhooks
+      summary: List webhooks
+      operationId: get_webhooks
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page size (1-100).
+      - name: after
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the last item of the previous page (older items).
+      - name: before
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Id of the first item of the current page (newer items).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Webhook'
+                required:
+                - object
+                - has_more
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /webhooks/{id}:
+    get:
+      tags:
+      - Webhooks
+      summary: Retrieve a webhook
+      operationId: get_webhooks_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Webhooks
+      summary: Update a webhook
+      operationId: patch_webhooks_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                events:
+                  type: array
+                  items:
+                    type: string
+                status:
+                  type: string
+                  enum:
+                  - enabled
+                  - disabled
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Webhooks
+      summary: Delete a webhook
+      operationId: delete_webhooks_id
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+  /webhooks/{id}/signing-secret/rotate:
+    post:
+      tags:
+      - Webhooks
+      summary: Rotate the signing secret
+      operationId: post_webhooks_id_signing_secret_rotate
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Resource id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  id:
+                    type: string
+                    format: uuid
+                  signing_secret:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: API key `pdg_<prefix>_<secret>`.
+  responses:
+    Unauthorized:
+      description: Missing or restricted credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResendError'
+    Forbidden:
+      description: Invalid key, unverified domain, plan limit, CSRF or role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResendError'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResendError'
+    Invalid:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResendError'
+    TooMany:
+      description: Rate limit or quota exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResendError'
+  schemas:
+    ResendError:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        name:
+          type: string
+          description: Machine-readable error name (validation_error, not_found, missing_api_key, invalid_api_key, restricted_api_key,
+            rate_limit_exceeded, daily_quota_exceeded, monthly_quota_exceeded, invalid_idempotent_request, csrf_failed, insufficient_role,
+            ...).
+        message:
+          type: string
+      required:
+      - statusCode
+      - name
+      - message
+    ObjectId:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+      required:
+      - object
+      - id
+    Id:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+      required:
+      - id
+    Deleted:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        deleted:
+          type: boolean
+      required:
+      - object
+      - id
+      - deleted
+    Tag:
+      type: object
+      properties:
+        name:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,256}$
+        value:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,256}$
+      required:
+      - name
+      - value
+    Attachment:
+      type: object
+      properties:
+        filename:
+          type: string
+        content:
+          type: string
+          description: Base64 content. Use either content or path.
+        path:
+          type: string
+          description: http(s) URL downloaded at send time (SSRF-guarded, 40MB budget, no redirects).
+        content_type:
+          type: string
+        content_id:
+          type: string
+          description: Makes the attachment inline (`cid:` in HTML).
+    TemplateRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Template id or alias (published version is used).
+        variables:
+          type: object
+          additionalProperties:
+            oneOf:
+            - type: string
+              maxLength: 2000
+            - type: number
+      required:
+      - id
+    SendEmail:
+      type: object
+      properties:
+        from:
+          type: string
+          description: '`Name <addr@verified-domain>`; may come from the template.'
+        to:
+          oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
+        cc:
+          oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
+        bcc:
+          oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
+        reply_to:
+          oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
+        subject:
+          type: string
+        html:
+          type: string
+        text:
+          type: string
+          description: Generated from html when omitted.
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        scheduled_at:
+          type: string
+          description: ISO 8601 or natural language (`in 1 hour`, `tomorrow at 9am`); within 30 days.
+        template:
+          $ref: '#/components/schemas/TemplateRef'
+        topic_id:
+          type: string
+          description: Not supported yet; a non-empty value is rejected.
+        stream:
+          type: string
+          description: 'Pidgely extension: `transactional` (default) or `broadcast` (adds RFC 8058 unsubscribe).'
+          enum:
+          - transactional
+          - broadcast
+      required:
+      - to
+    BatchResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Id'
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              message:
+                type: string
+      required:
+      - data
+    Email:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        message_id:
+          type: string
+        to:
+          type: array
+          items:
+            type: string
+        cc:
+          type: array
+          items:
+            type: string
+        bcc:
+          type: array
+          items:
+            type: string
+        reply_to:
+          type: array
+          items:
+            type: string
+        from:
+          type: string
+        subject:
+          type: string
+        html:
+          type:
+          - string
+          - 'null'
+        text:
+          type:
+          - string
+          - 'null'
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        scheduled_at:
+          type:
+          - string
+          - 'null'
+          description: Timestamp in Resend format, or null.
+        last_event:
+          type: string
+          enum:
+          - queued
+          - scheduled
+          - sent
+          - delivered
+          - delivery_delayed
+          - bounced
+          - complained
+          - suppressed
+          - failed
+          - canceled
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+    EmailAttachment:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        size:
+          type: integer
+        content_type:
+          type: string
+        content_disposition:
+          type: string
+          enum:
+          - attachment
+          - inline
+        content_id:
+          type:
+          - string
+          - 'null'
+        download_url:
+          type: string
+          description: Signed link, valid for 1 hour.
+        expires_at:
+          type: string
+    DomainRecord:
+      type: object
+      properties:
+        record:
+          type: string
+          enum:
+          - DKIM
+          - SPF
+          - DMARC
+        name:
+          type: string
+          description: Relative to the domain.
+        type:
+          type: string
+          enum:
+          - TXT
+          - MX
+        ttl:
+          type: string
+        status:
+          type: string
+        value:
+          type: string
+        priority:
+          type: integer
+    Domain:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+          - not_started
+          - pending
+          - verified
+          - failed
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        region:
+          type: string
+        open_tracking:
+          type: boolean
+        click_tracking:
+          type: boolean
+        tls:
+          type: string
+          enum:
+          - opportunistic
+          - enforced
+        capabilities:
+          type: object
+          properties:
+            sending:
+              type: string
+            receiving:
+              type: string
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/DomainRecord'
+    CreateDomain:
+      type: object
+      properties:
+        name:
+          type: string
+        region:
+          type: string
+        custom_return_path:
+          type: string
+          description: Bounce subdomain label (default `bounces`).
+        tls:
+          type: string
+          enum:
+          - opportunistic
+          - enforced
+        open_tracking:
+          type: boolean
+          description: Accepted, not supported yet (always false).
+        click_tracking:
+          type: boolean
+          description: Accepted, not supported yet.
+        capabilities:
+          type: object
+          properties:
+            sending:
+              type: string
+            receiving:
+              type: string
+              description: '`enabled` is rejected (receiving not supported yet).'
+      required:
+      - name
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        permission:
+          type: string
+          enum:
+          - full_access
+          - sending_access
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        last_used_at:
+          type:
+          - string
+          - 'null'
+          description: Timestamp in Resend format, or null.
+    CreatedApiKey:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        token:
+          type: string
+          description: 'Shown once: `pdg_<prefix>_<secret>`.'
+    Webhook:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        status:
+          type: string
+          enum:
+          - enabled
+          - disabled
+        endpoint:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        signing_secret:
+          type: string
+    Suppression:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        origin:
+          type: string
+          enum:
+          - bounce
+          - complaint
+          - manual
+          - unsubscribe
+        source_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+    ContactInput:
+      type: object
+      properties:
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        unsubscribed:
+          type: boolean
+        properties:
+          type: object
+          additionalProperties:
+            oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: 'null'
+        segments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+            required:
+            - id
+        topics:
+          type: array
+          description: Not supported yet.
+    Contact:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        unsubscribed:
+          type: boolean
+        properties:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              value: {}
+              type:
+                type: string
+                enum:
+                - string
+                - number
+                - boolean
+    Segment:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+    BroadcastInput:
+      type: object
+      properties:
+        segment_id:
+          type: string
+          format: uuid
+        audience_id:
+          type: string
+          format: uuid
+          description: Legacy alias of segment_id.
+        from:
+          type: string
+        subject:
+          type: string
+        reply_to:
+          oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
+        html:
+          type: string
+          description: Supports `{{{FIRST_NAME|there}}}`, `{{{contact.<property>}}}`, `{{{RESEND_UNSUBSCRIBE_URL}}}` and `{{{PIDGELY_UNSUBSCRIBE_URL}}}`.
+        text:
+          type: string
+        name:
+          type: string
+        preview_text:
+          type: string
+        send:
+          type: boolean
+        scheduled_at:
+          type: string
+        topic_id:
+          type: string
+          description: Not supported yet.
+    Broadcast:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        segment_id:
+          type:
+          - string
+          - 'null'
+        audience_id:
+          type:
+          - string
+          - 'null'
+        from:
+          type: string
+        subject:
+          type: string
+        reply_to:
+          type: array
+          items:
+            type: string
+        preview_text:
+          type: string
+        html:
+          type: string
+        text:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - scheduled
+          - queued
+          - sending
+          - sent
+          - canceled
+          - failed
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        scheduled_at:
+          type:
+          - string
+          - 'null'
+          description: Timestamp in Resend format, or null.
+        sent_at:
+          type:
+          - string
+          - 'null'
+          description: Timestamp in Resend format, or null.
+        topic_id:
+          type: 'null'
+        recipients:
+          type: integer
+        stats:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Deliveries by status (Pidgely extension).
+    TemplateVariable:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        type:
+          type: string
+          enum:
+          - string
+          - number
+        fallback_value:
+          oneOf:
+          - type: string
+          - type: number
+          - type: 'null'
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        updated_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+    TemplateInput:
+      type: object
+      properties:
+        name:
+          type: string
+        alias:
+          type: string
+        from:
+          type: string
+        subject:
+          type: string
+        reply_to:
+          oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
+        html:
+          type: string
+        text:
+          type: string
+        variables:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              type:
+                type: string
+                enum:
+                - string
+                - number
+              fallback_value:
+                oneOf:
+                - type: string
+                - type: number
+            required:
+            - key
+            - type
+    Template:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        current_version_id:
+          type:
+          - string
+          - 'null'
+        alias:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        created_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        updated_at:
+          type: string
+          description: Timestamp in Resend format (`2026-10-12 16:44:41.000000+00`).
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+        published_at:
+          type:
+          - string
+          - 'null'
+          description: Timestamp in Resend format, or null.
+        from:
+          type: string
+        subject:
+          type: string
+        reply_to:
+          type: array
+          items:
+            type: string
+        html:
+          type: string
+        text:
+          type: string
+        variables:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateVariable'
+        has_unpublished_versions:
+          type: boolean
