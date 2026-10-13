@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `Templates.Preview` renders a template draft with variables (`POST /templates/{id_or_alias}/preview`), with the `PreviewTemplateRequest` and `TemplatePreview` types.
+- `Contacts.Batch` creates or updates up to 1,000 contacts in one request (`POST /contacts/batch`), with the `ContactBatchRequest`, `ContactInput`, `ContactBatchResult` and `ContactBatchItem` types. Invalid rows are reported in `Errors` with their index.
+
 ## [0.1.0] - 2026-10-12
 
 ### Added

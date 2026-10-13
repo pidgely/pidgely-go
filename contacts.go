@@ -54,6 +54,42 @@ type UpdateContactRequest struct {
 	AudienceId string `json:"-"`
 }
 
+// ContactInput is one row of ContactBatchRequest. It creates the contact or
+// updates the existing one with the same email.
+type ContactInput struct {
+	Email        string `json:"email"`
+	FirstName    string `json:"first_name,omitempty"`
+	LastName     string `json:"last_name,omitempty"`
+	Unsubscribed *bool  `json:"unsubscribed,omitempty"`
+	// Properties are custom values: string, number, bool or nil.
+	Properties map[string]any `json:"properties,omitempty"`
+	// Segments to add the contact to.
+	Segments []Segment `json:"segments,omitempty"`
+}
+
+// ContactBatchRequest is the body of POST /contacts/batch.
+type ContactBatchRequest struct {
+	// Contacts are up to 1,000 rows, each saved independently.
+	Contacts []ContactInput `json:"contacts"`
+	// SegmentId adds every row to this segment.
+	SegmentId string `json:"segment_id,omitempty"`
+}
+
+// ContactBatchItem is a saved row of a contact batch.
+type ContactBatchItem struct {
+	// Index is the position of the row in ContactBatchRequest.Contacts.
+	Index int    `json:"index"`
+	Id    string `json:"id"`
+}
+
+// ContactBatchResult is returned by Contacts.Batch. Invalid rows are reported
+// in Errors with their index; the other rows are saved.
+type ContactBatchResult struct {
+	Object string             `json:"object"`
+	Data   []ContactBatchItem `json:"data"`
+	Errors []BatchError       `json:"errors"`
+}
+
 // ListContactsParams filters GET /contacts.
 type ListContactsParams struct {
 	ListParams
@@ -102,6 +138,21 @@ func (s *ContactsService) Create(ctx context.Context, req *CreateContactRequest,
 		path = contactsBase(req.AudienceId)
 	}
 	return send[ObjectRef](ctx, s.client, http.MethodPost, path, req, opts)
+}
+
+// Batch creates or updates up to 1,000 contacts by email (POST /contacts/batch).
+// Each row is saved independently; invalid rows are reported in the result's
+// Errors with their index instead of failing the request.
+func (s *ContactsService) Batch(ctx context.Context, req *ContactBatchRequest, opts ...RequestOption) (*ContactBatchResult, error) {
+	if req == nil {
+		req = &ContactBatchRequest{}
+	}
+	if req.Contacts == nil {
+		r := *req
+		r.Contacts = []ContactInput{}
+		req = &r
+	}
+	return send[ContactBatchResult](ctx, s.client, http.MethodPost, "/contacts/batch", req, opts)
 }
 
 // List lists contacts, optionally filtered by segment (GET /contacts).

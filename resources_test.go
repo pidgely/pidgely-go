@@ -71,6 +71,14 @@ func TestEndpoints(t *testing.T) {
 			_, err := c.Contacts.Create(ctx, &CreateContactRequest{Email: "ana@x.y", AudienceId: "aud1"})
 			return err
 		}, "POST", "/audiences/aud1/contacts", "", `{"email":"ana@x.y"}`, [2]string{}},
+		{"contacts.batch", func(c *Client) error {
+			_, err := c.Contacts.Batch(ctx, &ContactBatchRequest{
+				Contacts:  []ContactInput{{Email: "ana@x.y", FirstName: "Ana", Unsubscribed: Bool(false), Properties: map[string]any{"plan": "pro"}, Segments: []Segment{{Id: "s2"}}}, {Email: "bo@x.y"}},
+				SegmentId: "s1",
+			})
+			return err
+		}, "POST", "/contacts/batch", "", `{"contacts":[{"email":"ana@x.y","first_name":"Ana","unsubscribed":false,"properties":{"plan":"pro"},"segments":[{"id":"s2"}]},{"email":"bo@x.y"}],"segment_id":"s1"}`, [2]string{}},
+		{"contacts.batch nil", func(c *Client) error { _, err := c.Contacts.Batch(ctx, nil); return err }, "POST", "/contacts/batch", "", `{"contacts":[]}`, [2]string{}},
 		{"contacts.list", func(c *Client) error {
 			_, err := c.Contacts.List(ctx, &ListContactsParams{ListParams: ListParams{Limit: 100}, SegmentId: "s1"})
 			return err
@@ -143,6 +151,11 @@ func TestEndpoints(t *testing.T) {
 		{"templates.remove", func(c *Client) error { _, err := c.Templates.Remove(ctx, "welcome"); return err }, "DELETE", "/templates/welcome", "", "", [2]string{}},
 		{"templates.publish", func(c *Client) error { _, err := c.Templates.Publish(ctx, "welcome"); return err }, "POST", "/templates/welcome/publish", "", "", [2]string{}},
 		{"templates.duplicate", func(c *Client) error { _, err := c.Templates.Duplicate(ctx, "welcome"); return err }, "POST", "/templates/welcome/duplicate", "", "", [2]string{}},
+		{"templates.preview", func(c *Client) error {
+			_, err := c.Templates.Preview(ctx, "wel come", &PreviewTemplateRequest{Variables: map[string]any{"NAME": "Ana", "DAYS": 14}})
+			return err
+		}, "POST", "/templates/wel%20come/preview", "", `{"variables":{"NAME":"Ana","DAYS":14}}`, [2]string{}},
+		{"templates.preview nil", func(c *Client) error { _, err := c.Templates.Preview(ctx, "welcome", nil); return err }, "POST", "/templates/welcome/preview", "", `{}`, [2]string{}},
 		// Webhooks
 		{"webhooks.create", func(c *Client) error {
 			_, err := c.Webhooks.Create(ctx, &CreateWebhookRequest{Endpoint: "https://acme.com/wh", Events: []string{EventEmailDelivered, EventEmailBounced}})
@@ -239,6 +252,7 @@ func TestRequiredIDs(t *testing.T) {
 		func() error { _, err := c.Templates.Remove(ctx, ""); return err },
 		func() error { _, err := c.Templates.Publish(ctx, ""); return err },
 		func() error { _, err := c.Templates.Duplicate(ctx, ""); return err },
+		func() error { _, err := c.Templates.Preview(ctx, "", nil); return err },
 		func() error { _, err := c.Webhooks.Get(ctx, ""); return err },
 		func() error { _, err := c.Webhooks.Update(ctx, "", nil); return err },
 		func() error { _, err := c.Webhooks.Remove(ctx, ""); return err },
@@ -268,6 +282,8 @@ func TestDecodeTypedResponses(t *testing.T) {
 		reply{body: `{"object":"webhook","id":"w1","signing_secret":"whsec_abc"}`},
 		reply{body: `{"data":[{"id":"e1"}],"errors":[{"index":1,"message":"bad to"}]}`},
 		reply{body: `{"data":[{"object":"suppression","id":"s1","deleted":true}]}`},
+		reply{body: `{"object":"template_preview","from":"Acme <a@acme.com>","subject":"Hi Ana","reply_to":[],"html":"<p>Hi Ana</p>","text":"Hi Ana","missing_variables":["DAYS"]}`},
+		reply{body: `{"object":"list","data":[{"index":0,"id":"c1"}],"errors":[{"index":1,"message":"email: is invalid"}]}`},
 	)
 	d, err := c.Domains.Create(ctx, &CreateDomainRequest{Name: "acme.com"})
 	if err != nil || len(d.Records) != 2 || d.Records[1].Priority != 10 || d.Capabilities.Sending != "enabled" {
@@ -300,6 +316,14 @@ func TestDecodeTypedResponses(t *testing.T) {
 	rm, err := c.Suppressions.Batch.Remove(ctx, &RemoveSuppressionBatchRequest{Emails: []string{"a@b.c"}})
 	if err != nil || !rm.Data[0].Deleted {
 		t.Fatalf("%+v %v", rm, err)
+	}
+	pv, err := c.Templates.Preview(ctx, "welcome", &PreviewTemplateRequest{Variables: map[string]any{"NAME": "Ana"}})
+	if err != nil || pv.Subject != "Hi Ana" || pv.Html != "<p>Hi Ana</p>" || pv.MissingVariables[0] != "DAYS" {
+		t.Fatalf("%+v %v", pv, err)
+	}
+	cb, err := c.Contacts.Batch(ctx, &ContactBatchRequest{Contacts: []ContactInput{{Email: "a@b.c"}, {Email: "bad"}}})
+	if err != nil || cb.Data[0].Id != "c1" || cb.Data[0].Index != 0 || cb.Errors[0].Index != 1 || cb.Errors[0].Message == "" {
+		t.Fatalf("%+v %v", cb, err)
 	}
 }
 

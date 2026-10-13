@@ -184,7 +184,8 @@ func WithBatchValidation(mode string) RequestOption {
 	return WithRequestHeader("x-batch-validation", mode)
 }
 
-// BatchError reports an email rejected in permissive mode.
+// BatchError reports a rejected batch row: an email in permissive mode, or a
+// contact in Contacts.Batch.
 type BatchError struct {
 	Index   int    `json:"index"`
 	Message string `json:"message"`

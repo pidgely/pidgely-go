@@ -70,6 +70,26 @@ type UpdateTemplateRequest struct {
 	Variables []TemplateVariableInput `json:"variables,omitempty"`
 }
 
+// PreviewTemplateRequest is the body of POST /templates/{id_or_alias}/preview.
+type PreviewTemplateRequest struct {
+	// Variables are the values to render with (string or number). Variables
+	// that are not given use their fallback value.
+	Variables map[string]any `json:"variables,omitempty"`
+}
+
+// TemplatePreview is a template draft rendered with variables.
+type TemplatePreview struct {
+	Object  string   `json:"object"`
+	From    string   `json:"from"`
+	Subject string   `json:"subject"`
+	ReplyTo []string `json:"reply_to"`
+	Html    string   `json:"html"`
+	Text    string   `json:"text"`
+	// MissingVariables lists the variables with neither a value nor a fallback
+	// value; sending the template would fail until they are given.
+	MissingVariables []string `json:"missing_variables"`
+}
+
 // TemplatesService manages templates. Templates are addressed by id or alias.
 type TemplatesService struct{ client *Client }
 
@@ -122,4 +142,16 @@ func (s *TemplatesService) Duplicate(ctx context.Context, idOrAlias string, opts
 		return nil, err
 	}
 	return send[ObjectRef](ctx, s.client, http.MethodPost, "/templates/"+seg(idOrAlias)+"/duplicate", nil, opts)
+}
+
+// Preview renders the draft with variables without sending anything
+// (POST /templates/{id_or_alias}/preview). req may be nil.
+func (s *TemplatesService) Preview(ctx context.Context, idOrAlias string, req *PreviewTemplateRequest, opts ...RequestOption) (*TemplatePreview, error) {
+	if err := required("idOrAlias", idOrAlias); err != nil {
+		return nil, err
+	}
+	if req == nil {
+		req = &PreviewTemplateRequest{}
+	}
+	return send[TemplatePreview](ctx, s.client, http.MethodPost, "/templates/"+seg(idOrAlias)+"/preview", req, opts)
 }

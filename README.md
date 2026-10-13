@@ -208,6 +208,16 @@ client.Contacts.Get(ctx, "ana@example.com")
 client.Contacts.Update(ctx, "ana@example.com", &pidgely.UpdateContactRequest{Unsubscribed: pidgely.Bool(true)}) // kept in sync with the suppression list
 client.Contacts.Remove(ctx, "ana@example.com")
 
+// Upsert up to 1,000 contacts; invalid rows are reported with their index instead of failing the request
+res, err := client.Contacts.Batch(ctx, &pidgely.ContactBatchRequest{
+	Contacts: []pidgely.ContactInput{
+		{Email: "ana@example.com", FirstName: "Ana"},
+		{Email: "bruno@example.com", Properties: map[string]any{"plan": "team"}},
+	},
+	SegmentId: segmentID, // optional: added to every row
+})
+// res.Data → [{Index, Id}], res.Errors → [{Index, Message}]
+
 client.Contacts.Segments.List(ctx, "ana@example.com", nil)
 client.Contacts.Segments.Add(ctx, "ana@example.com", segmentID)
 client.Contacts.Segments.Remove(ctx, contactID, segmentID)
@@ -264,6 +274,12 @@ t, err := client.Templates.Create(ctx, &pidgely.CreateTemplateRequest{
 	},
 })
 client.Templates.Publish(ctx, t.Id) // the published version is what TemplateRef sends
+
+// Render the draft without sending; MissingVariables lists variables with no value and no fallback
+p, err := client.Templates.Preview(ctx, "welcome", &pidgely.PreviewTemplateRequest{
+	Variables: map[string]any{"NAME": "Ana", "TRIAL_DAYS": 30},
+})
+// p.Subject, p.Html, p.Text, p.MissingVariables
 
 client.Templates.Get(ctx, "welcome") // by id or alias (draft)
 client.Templates.Update(ctx, "welcome", &pidgely.UpdateTemplateRequest{Subject: "Welcome aboard, {{{NAME}}}!"})
@@ -346,7 +362,7 @@ Pidgely serves the Resend REST API at the same paths, and this SDK mirrors `rese
 3. Verify your domain in Pidgely and publish the DNS records it returns.
 4. If you verify webhooks, use `webhook.Verify` with the `whsec_…` secret from your Pidgely webhook.
 
-Request structs keep Resend's field names (`Html`, `ReplyTo`, `ScheduledAt`, `Id`). Pidgely additions include `Emails.Attachments`, `ApiKeys.Update`, `Segments.Update/ListContacts`, `Broadcasts.Cancel/Duplicate`, `Suppressions`, the `Stream` field on emails, and built-in retries. Some Resend features are not supported yet: open/click tracking, topics, inbound email, automations, events and logs. See the migration guide at [docs.pidgely.com](https://docs.pidgely.com) for the full list.
+Request structs keep Resend's field names (`Html`, `ReplyTo`, `ScheduledAt`, `Id`). Pidgely additions include `Emails.Attachments`, `ApiKeys.Update`, `Segments.Update/ListContacts`, `Contacts.Batch`, `Templates.Preview`, `Broadcasts.Cancel/Duplicate`, `Suppressions`, the `Stream` field on emails, and built-in retries. Some Resend features are not supported yet: open/click tracking, topics, inbound email, automations, events and logs. See the migration guide at [docs.pidgely.com](https://docs.pidgely.com) for the full list.
 
 ## Development
 

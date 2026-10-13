@@ -1006,6 +1006,50 @@ paths:
           $ref: '#/components/responses/TooMany'
       security:
       - apiKey: []
+  /contacts/batch:
+    post:
+      tags:
+      - Contacts
+      summary: Upsert up to 1,000 contacts (Pidgely extension)
+      operationId: post_contacts_batch
+      description: Each row is saved independently; invalid rows are reported in errors with their index.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contacts:
+                  type: array
+                  maxItems: 1000
+                  items:
+                    $ref: '#/components/schemas/ContactInput'
+                segment_id:
+                  type: string
+                  format: uuid
+                  description: Added to every row.
+              required:
+              - contacts
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactBatchResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
   /contacts/{key}:
     get:
       tags:
@@ -2608,6 +2652,51 @@ paths:
           $ref: '#/components/responses/TooMany'
       security:
       - apiKey: []
+  /templates/{key}/preview:
+    post:
+      tags:
+      - Templates
+      summary: Render the draft with variables (Pidgely extension)
+      operationId: post_templates_key_preview
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Template id or alias
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                variables:
+                  type: object
+                  additionalProperties:
+                    oneOf:
+                    - type: string
+                    - type: number
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplatePreview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Invalid'
+        '429':
+          $ref: '#/components/responses/TooMany'
+      security:
+      - apiKey: []
   /templates/{key}/publish:
     post:
       tags:
@@ -3679,3 +3768,65 @@ components:
             $ref: '#/components/schemas/TemplateVariable'
         has_unpublished_versions:
           type: boolean
+    ContactBatchResult:
+      type: object
+      properties:
+        object:
+          type: string
+          enum:
+          - list
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              id:
+                type: string
+                format: uuid
+            required:
+            - index
+            - id
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              message:
+                type: string
+            required:
+            - index
+            - message
+      required:
+      - object
+      - data
+      - errors
+    TemplatePreview:
+      type: object
+      properties:
+        object:
+          type: string
+        from:
+          type: string
+        subject:
+          type: string
+        reply_to:
+          type: array
+          items:
+            type: string
+        html:
+          type: string
+        text:
+          type: string
+        missing_variables:
+          type: array
+          items:
+            type: string
+      required:
+      - subject
+      - html
+      - text
+      - missing_variables
